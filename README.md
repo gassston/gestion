@@ -1,17 +1,34 @@
-# gestion
+# Gestion
+# 📦 Inventory & Branch Management API
 
-cómo usar desde Next.js
-Cuando el usuario inicia sesión desde tu frontend:
+This project is a full-stack, mobile-friendly web application for managing users, products, stock, and multi-branch inventory movement. It includes:
 
-Envía un POST a /login con username=email y password
+- ✅ FastAPI backend (async-ready)
+- 🔐 JWT authentication with roles (`admin`, `user`)
+- 🧍 User, Product, Client, Stock & Branch CRUD
+- 🔁 Real-time stock transfers between branches
+- 🐳 Dockerized for local & production environments
+- 🌱 Automatic seeding (default admin user & branches)
+- 🧪 Swagger & ReDoc documentation
 
-Recibe el access_token
+---
 
-Guarda el token en localStorage o cookies
+## 🚀 Tech Stack
 
-Agrega este header en las llamadas futuras:
+| Layer     | Tech                 |
+|-----------|----------------------|
+| Backend   | FastAPI (Python)     |
+| Auth      | JWT + Bcrypt         |
+| Database  | PostgreSQL + SQLAlchemy |
+| Frontend  | Next.js (mobile-first) |
+| Infra     | Docker + Docker Compose |
 
-http
-Copy
-Edit
-Authorization: Bearer <access_token>
+---
+
+## 🧑‍💻 Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/gassston/gestion.git
+cd gestion
