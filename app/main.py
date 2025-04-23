@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from utils.logger import get_logger
-from models import product, stock, user, client, movement, branch
-from routes import product, stock, user, client, movement, login, health, branch
+from routes import movement, client, login, branch, stock, product, health, user
 from db.base import Base, engine
 from seeds.users import seed_admin_user
 from db.base import SessionLocal
