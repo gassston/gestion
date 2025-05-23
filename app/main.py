@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from utils.logger import get_logger
@@ -53,6 +54,15 @@ Features:
     docs_url="/docs",      # Swagger UI (default)
     redoc_url="/redoc",    # ReDoc UI
     lifespan=lifespan,
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],     # Frontend's domain
+    allow_credentials=True,  # Allow cookies or auth headers
+    allow_methods=["*"],     # Allow all methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],     # Allow all headers
 )
 
 app.include_router(health.router)
