@@ -1,45 +1,45 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, joinedload
-from fastapi_pagination import Page, paginate
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from db.base import get_db
-from models.stock import Stock
-from schemas.stock import StockCreate, StockUpdate, StockResponse
-from cruds import stock
+from schemas.product import ProductResponse, ProductCreate, ProductUpdate, ProductListResponse
+from cruds.product import get_wine, get_wines, create_wine, update_wine, delete_wine
 from utils.auth import get_current_admin
-from utils.logger import get_logger
 
-logger = get_logger(__name__)
+router = APIRouter(prefix="/products", tags=["Products"])
 
-router = APIRouter(prefix="/stock", tags=["Stock"])
+@router.get("", response_model=ProductListResponse)
+def read_wines(
+    db: Session = Depends(get_db),
+    name: str = None,
+    region: str = None,
+    vintage: int = None,
+    sort: str = "name_asc",
+    cursor: int = None,
+    limit: int = 100
+):
+    return get_wines(db, name=name, region=region, vintage=vintage, sort=sort, cursor=cursor, limit=limit)
 
-@router.get("", response_model=Page[StockResponse])
-def list_stock(branch_id: int | None = None, db: Session = Depends(get_db)):
-    """Get stock entries, optionally filtered by branch_id, with pagination."""
-    stock_entries = db.query(Stock).options(joinedload(Stock.product))
-    if branch_id:
-        stock_entries = stock_entries.filter(Stock.branch_id == branch_id)
-    return paginate(stock_entries.all())
+@router.get("/{wine_id}", response_model=ProductResponse)
+def read_wine(wine_id: int, db: Session = Depends(get_db)):
+    db_wine = get_wine(db, wine_id=wine_id)
+    if db_wine is None:
+        raise HTTPException(status_code=404, detail="Wine not found")
+    return db_wine
 
-@router.post("", response_model=StockResponse, status_code=201, dependencies=[Depends(get_current_admin)])
-def create_stock(new_stock: StockCreate, db: Session = Depends(get_db)):
-    """Create a new stock entry (admin only)."""
-    logger.info(f"Creating stock for product ID: {new_stock.product_id} at branch ID: {new_stock.branch_id}")
-    return stock.create_stock(db, new_stock)
+@router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_current_admin)])
+def create_new_wine(wine: ProductCreate, db: Session = Depends(get_db)):
+    return create_wine(db, wine)
 
-@router.put("/{stock_id}", response_model=StockResponse, dependencies=[Depends(get_current_admin)])
-def update_stock(stock_id: int, updated_stock: StockUpdate, db: Session = Depends(get_db)):
-    """Update a stock entry (admin only)."""
-    updated = stock.update_stock(db, stock_id, updated_stock)
-    if not updated:
-        raise HTTPException(status_code=404, detail="Stock ID not found")
-    logger.info(f"Updated stock ID: {stock_id}")
-    return updated
+@router.put("/{wine_id}", response_model=ProductResponse, dependencies=[Depends(get_current_admin)])
+def update_existing_wine(wine_id: int, wine: ProductUpdate, db: Session = Depends(get_db)):
+    db_wine = update_wine(db, wine_id, wine)
+    if db_wine is None:
+        raise HTTPException(status_code=404, detail="Wine not found")
+    return db_wine
 
-@router.delete("/{stock_id}", dependencies=[Depends(get_current_admin)])
-def delete_stock(stock_id: int, db: Session = Depends(get_db)):
-    """Delete a stock entry (admin only)."""
-    deleted = stock.delete_stock(db, stock_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Stock ID not found")
-    logger.info(f"Deleted stock ID: {stock_id}")
-    return {"message": "Stock ID deleted"}
+@router.delete("/{wine_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(get_current_admin)])
+def delete_existing_wine(wine_id: int, db: Session = Depends(get_db)):
+    success = delete_wine(db, wine_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Wine not found")
+    return None
