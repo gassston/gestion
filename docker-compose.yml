@@ -10,19 +10,10 @@ services:
     networks:
       - app-network
 
-#  backend:
-#    build: ./backend
-#    depends_on:
-#      - db
-#    environment:
-#      DATABASE_URL: postgresql://postgres:postgres@db:5432/mydb
-#    ports:
-#      - "8000:8000"
-#    networks:
-#      - app-network
-
   api:
-    build: ./app
+    build:
+      context: .
+      dockerfile: Dockerfile
     depends_on:
       - db
     ports:
@@ -30,12 +21,12 @@ services:
     networks:
       - app-network
     environment:
-#      NEXT_PUBLIC_API_URL: http://localhost:8000  # o el host del backend
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: mydb
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
+      JWT_KEY: "5ySbfCyvw6797YRB7pAlMPnkHSdqrNqwnF3Z_s1t2jA"
     volumes:
       - .:/app
 
@@ -44,3 +35,4 @@ volumes:
 
 networks:
   app-network:
+    driver: bridge

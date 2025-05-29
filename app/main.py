@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from fastapi_pagination import add_pagination
 
 from utils.logger import get_logger
 from routes import movement, client, login, branch, stock, product, health, user
@@ -21,9 +22,7 @@ async def lifespan(app: FastAPI):
     logger.info("Seeding logic")
     db = SessionLocal()
     try:
-        logger.info("before seed_admin_user")
         seed_admin_user(db)
-        logger.info("after seed_admin_user")
     finally:
         db.close()
 
@@ -64,6 +63,9 @@ app.add_middleware(
     allow_methods=["*"],     # Allow all methods (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],     # Allow all headers
 )
+
+# Enable pagination
+add_pagination(app)
 
 app.include_router(health.router)
 app.include_router(login.router)

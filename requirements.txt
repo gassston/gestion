@@ -2,7 +2,7 @@ SQLAlchemy~=2.0.40
 dotenv~=0.9.9
 python-dotenv~=1.1.0
 pydantic~=2.11.3
-passlib[bcrypt]
+passlib[bcrypt]~=1.7.4
 bcrypt==3.2.2
 fastapi~=0.115.12
 python-jose~=3.4.0
@@ -10,3 +10,6 @@ uvicorn[standard]
 psycopg2-binary~=2.9.10
 pydantic[email]
 python-multipart~=0.0.20
+fastapi-pagination~=0.13.1
+jose~=1.0.0
+Werkzeug~=3.1.3
