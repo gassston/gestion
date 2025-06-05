@@ -3,11 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from fastapi_pagination import add_pagination
 
-from utils.logger import get_logger
-from routes import movement, client, login, branch, stock, product, health, user
+from cruds.oauth_client import create_oauth_client
 from db.base import Base, engine
-from seeds.users import seed_admin_user
 from db.base import SessionLocal
+from models.oauth_client import OAuthClient
+from routes import movement, client, login, branch, stock, product, health, user
+from seeds.users import seed_admin_user
+from seeds.oauth_clients import seed_oauth_client
+from utils.logger import get_logger
 
 
 logger = get_logger(__name__)
@@ -23,6 +26,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_admin_user(db)
+        seed_oauth_client(db)
     finally:
         db.close()
 

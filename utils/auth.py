@@ -1,5 +1,4 @@
 import os
-
 from werkzeug.security import generate_password_hash, check_password_hash
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -13,21 +12,34 @@ from utils.logger import get_logger
 
 SECRET_KEY = os.getenv("JWT_KEY")  # Replace with a secure key
 ALGORITHM = "HS256"
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 logger = get_logger(__name__)
-
 
 class Role(str, Enum):
     user = "user"
     admin = "admin"
 
+class Scope(str, Enum):
+    read = "read"
+    write = "write"
+    admin = "admin"
+
 def hash_password(password: str) -> str:
     """Hash a password using Werkzeug."""
-    return generate_password_hash(password)
+    return generate_password_hash(password, method='pbkdf2:sha256')
 
 def verify_password(hashed_password: str, plain_password: str) -> bool:
     """Verify a plain password against a hashed password."""
     return check_password_hash(pwhash=hashed_password, password=plain_password)
+
+def validate_scopes(requested_scopes: str) -> list[str]:
+    """Validate and return a list of requested scopes."""
+    valid_scopes = [scope.value for scope in Scope]
+    scopes = requested_scopes.split() if requested_scopes else []
+    for scope in scopes:
+        if scope not in valid_scopes:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid scope: {scope}")
+    return scopes
 
 def create_access_token(data: dict, expires_delta: timedelta) -> str:
     """Create a JWT access token."""
