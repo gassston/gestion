@@ -1,27 +1,24 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from db.base import Base
-from cruds import user
-from utils.auth import SECRET_KEY, ALGORITHM
+from jose import JWTError
+from utils.auth import SECRET_KEY, ALGORITHM, jwt, get_current_user
+from models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(Base)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = int(payload.get("sub"))
-        role = payload.get("role")
-        get_user = user.get_user(db, user_id)
-        if not get_user:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
-    except JWTError:
-        raise HTTPException(status_code=403, detail="Invalid token")
-
-def require_role(required_role: str):
-    def role_checker(user=Depends(get_current_user)):
-        if user.role != required_role:
-            raise HTTPException(status_code=403, detail="Not authorized")
-        return user
-    return role_checker
+def require_scopes(required_scopes: list[str]):
+    """Ensure the user has all required scopes."""
+    async def scope_checker(user: User = Depends(get_current_user)):
+        try:
+            token = await oauth2_scheme(None)
+            if not token:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided")
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            token_scopes = payload.get("scope", "").split()
+            for scope in required_scopes:
+                if scope not in token_scopes:
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Scope {scope} required")
+            return user
+        except JWTError as e:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from e
+    return scope_checker
