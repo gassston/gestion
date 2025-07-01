@@ -1,21 +1,29 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-from fastapi_pagination import Page, paginate
+from fastapi_pagination.ext.sqlalchemy import paginate as paginate_sqlalchemy
+from fastapi_pagination.cursor import CursorPage
 from db.base import get_db
 from models.stock import Stock
 from schemas.stock import StockCreate, StockUpdate, StockResponse
 from cruds import stock
 from utils.auth import get_current_admin
+from utils.logger import get_logger
+from utils.pagination import CustomCursorParams
+
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/stock", tags=["Stock"])
 
-@router.get("", response_model=Page[StockResponse])
-def list_stock(branch_id: int | None = None, db: Session = Depends(get_db)):
-    """Get stock entries, optionally filtered by branch_id, with pagination."""
-    stock_entries = db.query(Stock).options(joinedload(Stock.product))
+@router.get("", response_model=CursorPage[StockResponse])
+def list_stock(branch_id: int | None = None, db: Session = Depends(get_db), params: CustomCursorParams = Depends()):
+    """Get stock entries, optionally filtered by branch_id, with cursor-based pagination."""
+    logger.info(f"Fetching stock entries with branch_id={branch_id}, cursor={params.cursor}, size={params.size}, order={params.order}")
+    query = db.query(Stock).options(joinedload(Stock.product))
     if branch_id:
-        stock_entries = stock_entries.filter(Stock.branch_id == branch_id)
-    return paginate(stock_entries.all())
+        query = query.filter(Stock.branch_id == branch_id)
+    query = query.order_by(Stock.id.asc())  # Ensure stable sorting
+    return paginate_sqlalchemy(query, params)
 
 @router.post("", response_model=StockResponse, status_code=201, dependencies=[Depends(get_current_admin)])
 def create_stock(new_stock: StockCreate, db: Session = Depends(get_db)):

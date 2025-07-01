@@ -1,20 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from fastapi_pagination import Page, paginate
+from fastapi_pagination.ext.sqlalchemy import paginate as paginate_sqlalchemy
+from fastapi_pagination.cursor import CursorPage
 from db.base import get_db
 from schemas.branch import BranchCreate, BranchUpdate, BranchResponse
 from cruds import branch as crud_branch
 from utils.auth import get_current_admin
 from utils.logger import get_logger
+from utils.pagination import CustomCursorParams
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/branches", tags=["Branches"])
 
-@router.get("", response_model=Page[BranchResponse])
-def list_branches(db: Session = Depends(get_db)):
-    """Get all branches with pagination."""
-    return paginate(crud_branch.get_branches(db))
+@router.get("", response_model=CursorPage[BranchResponse])
+def list_branches(db: Session = Depends(get_db), params: CustomCursorParams = Depends()):
+    """Get all branches with cursor-based pagination."""
+    logger.info(f"Fetching branches with cursor={params.cursor}, size={params.size}, order={params.order}")
+    query = crud_branch.get_branches(db)
+    return paginate_sqlalchemy(query, params)
 
 @router.get("/{branch_id}", response_model=BranchResponse)
 def get_branch(branch_id: int, db: Session = Depends(get_db)):
