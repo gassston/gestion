@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from db.base import get_db
 from schemas.user import UserCreate, UserResponse, UserUpdate
 from cruds import user
-from utils.auth import get_current_admin
+from utils.auth import get_current_admin, get_current_user
 from utils.logger import get_logger
 from utils.pagination import CustomCursorParams
 
@@ -25,6 +25,13 @@ def list_users(db: Session = Depends(get_db), params: CustomCursorParams = Depen
     logger.info(f"Fetching users with cursor={params.cursor}, size={params.size}, order={params.order}")
     query = user.list_users(db)
     return paginate_sqlalchemy(query, params)
+
+@router.get("/me", response_model=UserResponse)
+def get_current_user_details(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get the current user's details."""
+    user = current_user["user"]
+    logger.info(f"Fetching details for user: {user.username}")
+    return user
 
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Session = Depends(get_db)):
