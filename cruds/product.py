@@ -1,56 +1,40 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import asc, desc
 from models.product import Product
 from models.stock import Stock
 from schemas.product import ProductCreate, ProductUpdate
 from fastapi import HTTPException
 
 
-def get_wines(
-        db: Session,
-        name: str = None,
-        region: str = None,
-        vintage: int = None,
-        sort: str = "name_asc",
-        cursor: int = None,
-        limit: int = 100
-):
-    """Get wines with filtering, sorting, and cursor-based pagination."""
+def get_wines(db: Session, name: str | None = None, region: str | None = None, vintage: int | None = None,
+              sort: str = "id_asc"):
     query = db.query(Product)
 
     # Apply filters
     if name:
         query = query.filter(Product.name.ilike(f"%{name}%"))
     if region:
-        query = query.filter(Product.region.ilike(f"%{region}%"))
-    if vintage is not None:
+        query = query.filter(Product.region == region)
+    if vintage:
         query = query.filter(Product.vintage == vintage)
 
-    # Get total count
-    total = query.count()
-
-    # Apply sorting
-    if sort == "name_asc":
-        query = query.order_by(Product.name.asc())
+    # Apply sorting (always include id for uniqueness)
+    if sort == "id_asc":
+        query = query.order_by(asc(Product.id))
+    elif sort == "id_desc":
+        query = query.order_by(desc(Product.id))
+    elif sort == "name_asc":
+        query = query.order_by(asc(Product.name), asc(Product.id))  # Include id for uniqueness
     elif sort == "name_desc":
-        query = query.order_by(Product.name.desc())
+        query = query.order_by(desc(Product.name), asc(Product.id))
     elif sort == "vintage_asc":
-        query = query.order_by(Product.vintage.asc())
+        query = query.order_by(asc(Product.vintage), asc(Product.id))
     elif sort == "vintage_desc":
-        query = query.order_by(Product.vintage.desc())
+        query = query.order_by(desc(Product.vintage), asc(Product.id))
     else:
-        raise HTTPException(status_code=400, detail="Invalid sort parameter")
+        raise ValueError(f"Invalid sort parameter: {sort}")
 
-    # Apply cursor-based pagination
-    if cursor:
-        query = query.filter(Product.id > cursor)
-
-    # Limit results
-    wines = query.limit(limit).all()
-
-    # Determine next cursor
-    next_cursor = wines[-1].id if wines and len(wines) == limit else None
-
-    return {"items": wines, "total": total, "next_cursor": next_cursor}
+    return query
 
 
 def get_wine(db: Session, wine_id: int):

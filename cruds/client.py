@@ -13,9 +13,10 @@ def create_client(db: Session, client: ClientCreate):
     db.refresh(db_client)
     return db_client
 
+
 def get_clients(db: Session):
     """Get all clients."""
-    return db.query(Client).all()
+    return db.query(Client).order_by(Client.id.asc())
 
 def update_client(db: Session, client_id: int, client_data: ClientUpdate):
     """Update a client."""

@@ -68,5 +68,4 @@ def create_movement(db: Session, movement: MovementCreate):
 
 
 def list_movements(db: Session):
-    """Get all movements, ordered by timestamp descending."""
-    return db.query(Movement).order_by(Movement.timestamp.desc()).all()
+    return db.query(Movement).order_by(Movement.id.asc())

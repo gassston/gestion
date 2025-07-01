@@ -7,7 +7,7 @@ from fastapi import HTTPException
 
 def get_branches(db: Session):
     """Get all branches."""
-    return db.query(Branch).all()
+    return db.query(Branch).order_by(Branch.id.asc())
 
 def get_branch(db: Session, branch_id: int):
     """Get a branch by ID."""

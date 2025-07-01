@@ -36,7 +36,7 @@ def get_user_by_email(db: Session, email: str):
 
 def list_users(db: Session):
     """Get all users."""
-    return db.query(User).all()
+    return db.query(User).order_by(User.id.asc())
 
 def update_user(db: Session, user_id: int, update: UserUpdate):
     """Update a user."""

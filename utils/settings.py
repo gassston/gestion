@@ -2,4 +2,4 @@
 configuration
 '''
 
-DEBUG = True
+DEBUG = False
