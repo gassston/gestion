@@ -49,17 +49,24 @@ def create_access_token(data: dict, expires_delta: timedelta) -> str:
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    """Get the current user from the JWT token."""
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
+        email: str = payload.get("email")
+        username: str = payload.get("username")
+        name: str = payload.get("name")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         user = db.query(User).filter(User.id == int(user_id)).first()
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
-        return user
+        return {
+            "user": user,
+            "email": email,
+            "username": username,
+            "name": name
+        }
     except JWTError as e:
         raise HTTPException(status_code=401, detail="Invalid token") from e
 
